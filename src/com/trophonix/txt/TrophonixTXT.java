@@ -12,6 +12,8 @@ import java.nio.file.Files;
  */
 public class TrophonixTXT extends JFrame {
 
+    private static final String TITLE = "TrophonixTXT v1.1";
+
     private File currentDirectory = new File(".");
     private File currentFile = null;
 
@@ -21,7 +23,7 @@ public class TrophonixTXT extends JFrame {
     private String lastSaved;
 
     public TrophonixTXT() {
-        super("Trophonix TXT (New File)");
+        super(TITLE + " (New File)");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
@@ -39,7 +41,7 @@ public class TrophonixTXT extends JFrame {
         newItem.addActionListener(event -> {
             if (confirmClose()) {
                 textArea.setText("");
-                setTitle("Trophonix TXT (New File)");
+                setTitle(TITLE + " (New File)");
             }
         });
         fileMenu.add(newItem);
@@ -110,7 +112,7 @@ public class TrophonixTXT extends JFrame {
                     currentDirectory = file.getParentFile();
                     Files.readAllLines(file.toPath()).forEach(line -> textArea.append(line + "\n"));
                     currentFile = file;
-                    setTitle("Trophonix TXT (" + file.getName() + ")");
+                    setTitle(TITLE + " (" + file.getName() + ")");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -158,7 +160,7 @@ public class TrophonixTXT extends JFrame {
             textArea.write(fileWriter);
             fileWriter.close();
             lastSaved = textArea.getText();
-            setTitle("Trophonix TXT (" + name + ")");
+            setTitle(TITLE + " (" + name + ")");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
