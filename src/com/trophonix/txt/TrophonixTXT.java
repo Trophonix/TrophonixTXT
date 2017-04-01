@@ -203,7 +203,7 @@ public class TrophonixTXT extends JFrame {
 
     private void openFontChooser() {
         JFrame chooser = makeChooserFrame();
-        
+
     }
 
     private JFrame makeChooserFrame() {
