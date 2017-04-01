@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.*;
 import java.nio.file.Files;
 
@@ -75,7 +77,21 @@ public class TrophonixTXT extends JFrame {
         add(textPane);
         pack();
         setSize(size);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowListener() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (confirmClose()) {
+                    dispose();
+                }
+            }
+            public void windowOpened(WindowEvent e) {}
+            public void windowClosed(WindowEvent e) {}
+            public void windowIconified(WindowEvent e) {}
+            public void windowDeiconified(WindowEvent e) {}
+            public void windowActivated(WindowEvent e) {}
+            public void windowDeactivated(WindowEvent e) {}
+        });
         setLocationRelativeTo(null);
         setVisible(true);
 
@@ -110,7 +126,7 @@ public class TrophonixTXT extends JFrame {
                 try {
                     textArea.setText("");
                     currentDirectory = file.getParentFile();
-                    Files.readAllLines(file.toPath()).forEach(line -> textArea.append(line + "\n"));
+                    textArea.read(new FileReader(file), "Opening File for TrophonixTXT");
                     currentFile = file;
                     setTitle(TITLE + " (" + file.getName() + ")");
                 } catch (IOException ex) {
@@ -170,6 +186,8 @@ public class TrophonixTXT extends JFrame {
         if (!textArea.getText().isEmpty() && !textArea.getText().equals(lastSaved)) {
             JFrame chooser = makeChooserFrame();
             int input = JOptionPane.showOptionDialog(chooser, "Do you want to exit without saving?", "You Haven't Saved!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{"Yes, exit", "No, I want to save!"}, (Object)"Yes, exit");
+            chooser.setVisible(false);
+            chooser.dispose();
             return input == 0;
         }
         return true;
