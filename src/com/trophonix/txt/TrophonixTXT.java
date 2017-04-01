@@ -1,7 +1,13 @@
 package com.trophonix.txt;
 
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -79,6 +85,63 @@ public class TrophonixTXT extends JFrame {
         JMenuItem fontItem = new JMenuItem("[F]ont", KeyEvent.VK_F);
         fontItem.addActionListener(event -> openFontChooser());
         editMenu.add(fontItem);
+
+        JCheckBoxMenuItem wordWrapItem = new JCheckBoxMenuItem( "Word Wrap", true);
+        wordWrapItem.addActionListener(event -> textArea.setLineWrap(wordWrapItem.getState()));
+        editMenu.add(wordWrapItem);
+
+        editMenu.add(new JSeparator());
+
+        JMenuItem selectAllItem = new JMenuItem("Select All");
+        selectAllItem.addActionListener(event -> {
+            textArea.requestFocusInWindow();
+            textArea.selectAll();
+        });
+        editMenu.add(selectAllItem);
+
+        JMenuItem copyItem = new JMenuItem("Copy");
+        copyItem.addActionListener(event -> {
+            StringSelection selection = new StringSelection(textArea.getSelectedText());
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+        });
+        copyItem.setEnabled(false);
+        editMenu.add(copyItem);
+
+        JMenuItem pasteItem = new JMenuItem("Paste");
+        pasteItem.addActionListener(event -> {
+            Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
+            try {
+                textArea.insert((String)clipboard.getTransferData(DataFlavor.stringFlavor), textArea.getCaretPosition());
+            } catch (UnsupportedFlavorException | IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+        pasteItem.setEnabled(false);
+        editMenu.add(pasteItem);
+
+        editMenu.addMenuListener(new MenuListener() {
+            @Override
+            public void menuSelected(MenuEvent menuEvent) {
+                String selection = textArea.getSelectedText();
+                if (selection != null && !selection.isEmpty()) {
+                    copyItem.setEnabled(true);
+                }
+                Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
+                if (clipboard != null && clipboard.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                    pasteItem.setEnabled(true);
+                }
+            }
+
+            @Override
+            public void menuDeselected(MenuEvent menuEvent) {
+
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent menuEvent) {
+
+            }
+        });
 
         /* <----- Add Menus to MenuBar -----> */
         menuBar.add(fileMenu);
@@ -210,6 +273,7 @@ public class TrophonixTXT extends JFrame {
         JFrame chooserFrame = new JFrame();
         chooserFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         chooserFrame.setVisible(true);
+        chooserFrame.setLocationRelativeTo(null);
         return chooserFrame;
     }
 
