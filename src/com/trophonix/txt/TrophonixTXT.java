@@ -1,7 +1,5 @@
 package com.trophonix.txt;
 
-import com.sun.javafx.fxml.builder.JavaFXFontBuilder;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -203,7 +201,9 @@ public class TrophonixTXT extends JFrame {
 
     private void openFontChooser() {
         JFrame chooser = makeChooserFrame();
-
+        chooser.add(new FontChooser(this, chooser));
+        chooser.setSize(new Dimension(400, 300));
+        chooser.setVisible(true);
     }
 
     private JFrame makeChooserFrame() {
@@ -211,6 +211,10 @@ public class TrophonixTXT extends JFrame {
         chooserFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         chooserFrame.setVisible(true);
         return chooserFrame;
+    }
+
+    public void setFont(Font font) {
+        textArea.setFont(font);
     }
 
     public static void main(String[] args) {
