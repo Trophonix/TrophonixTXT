@@ -8,10 +8,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.*;
 import java.io.*;
 import java.nio.file.Files;
 
@@ -37,7 +34,6 @@ public class TrophonixTXT extends JFrame {
         } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
             ex.printStackTrace();
         }
-        Dimension size = new Dimension(640, 480);
 
         JMenuBar menuBar = new JMenuBar();
 
@@ -142,7 +138,26 @@ public class TrophonixTXT extends JFrame {
 
         add(textPane);
         pack();
+        Dimension size = new Dimension(640, 480);
         setSize(size);
+
+        InputMap map = textArea.getInputMap(JComponent.WHEN_FOCUSED);
+        map.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (currentFile == null || !currentFile.exists()) {
+                    openFileSaver();
+                } else {
+                    saveCurrentFile();
+                }
+            }
+        });
+        map.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (confirmClose()) dispose();
+            }
+        });
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowListener() {
             @Override
@@ -166,7 +181,8 @@ public class TrophonixTXT extends JFrame {
         textArea.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent keyEvent) {
-                if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
+                if (textArea.getText().equals(lastSaved)) setTitle(getTitle().replace("*)", ")"));
+                else if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
             }
 
             public void keyPressed(KeyEvent keyEvent) {}
@@ -237,6 +253,7 @@ public class TrophonixTXT extends JFrame {
     private boolean confirmClose() {
         if (!textArea.getText().isEmpty() && !textArea.getText().equals(lastSaved)) {
             JFrame chooser = makeChooserFrame();
+            chooser.setVisible(true);
             int input = JOptionPane.showOptionDialog(chooser, "Do you want to exit without saving?", "You Haven't Saved!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{"Yes, exit", "No, I want to save!"}, (Object)"Yes, exit");
             chooser.setVisible(false);
             chooser.dispose();
@@ -255,7 +272,6 @@ public class TrophonixTXT extends JFrame {
     private JFrame makeChooserFrame() {
         JFrame chooserFrame = new JFrame();
         chooserFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        chooserFrame.setVisible(true);
         chooserFrame.setLocationRelativeTo(null);
         return chooserFrame;
     }
