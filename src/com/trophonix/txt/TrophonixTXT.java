@@ -1,5 +1,7 @@
 package com.trophonix.txt;
 
+import com.sun.javafx.fxml.builder.JavaFXFontBuilder;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -35,6 +37,7 @@ public class TrophonixTXT extends JFrame {
 
         JMenuBar menuBar = new JMenuBar();
 
+        /* <----- File Menu -----> */
         JMenu fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
         menuBar.add(fileMenu);
@@ -70,8 +73,20 @@ public class TrophonixTXT extends JFrame {
         exitItem.addActionListener(event -> {
             if (confirmClose()) dispose();
         });
-        fileMenu.add(exitItem);
 
+        /* <----- Edit Menu -----> */
+        JMenu editMenu = new JMenu("Edit");
+        editMenu.setMnemonic(KeyEvent.VK_E);
+
+        JMenuItem fontItem = new JMenuItem("[F]ont", KeyEvent.VK_F);
+        fontItem.addActionListener(event -> openFontChooser());
+        editMenu.add(fontItem);
+
+        /* <----- Add Menus to MenuBar -----> */
+        menuBar.add(fileMenu);
+        menuBar.add(editMenu);
+
+        /* <----- Set MenuBar -----> */
         setJMenuBar(menuBar);
 
         add(textPane);
@@ -155,13 +170,6 @@ public class TrophonixTXT extends JFrame {
         fileFrame.dispose();
     }
 
-    private JFrame makeChooserFrame() {
-        JFrame chooserFrame = new JFrame();
-        chooserFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        chooserFrame.setVisible(true);
-        return chooserFrame;
-    }
-
     private void saveCurrentFile() {
         try {
             String name = currentFile.getName();
@@ -191,6 +199,18 @@ public class TrophonixTXT extends JFrame {
             return input == 0;
         }
         return true;
+    }
+
+    private void openFontChooser() {
+        JFrame chooser = makeChooserFrame();
+        
+    }
+
+    private JFrame makeChooserFrame() {
+        JFrame chooserFrame = new JFrame();
+        chooserFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        chooserFrame.setVisible(true);
+        return chooserFrame;
     }
 
     public static void main(String[] args) {
