@@ -123,24 +123,13 @@ public class TrophonixTXT extends JFrame {
             @Override
             public void menuSelected(MenuEvent menuEvent) {
                 String selection = textArea.getSelectedText();
-                if (selection != null && !selection.isEmpty()) {
-                    copyItem.setEnabled(true);
-                }
+                copyItem.setEnabled(selection != null && !selection.isEmpty());
                 Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
-                if (clipboard != null && clipboard.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                    pasteItem.setEnabled(true);
-                }
+                pasteItem.setEnabled(clipboard != null && clipboard.isDataFlavorSupported(DataFlavor.stringFlavor));
             }
 
-            @Override
-            public void menuDeselected(MenuEvent menuEvent) {
-
-            }
-
-            @Override
-            public void menuCanceled(MenuEvent menuEvent) {
-
-            }
+            public void menuDeselected(MenuEvent menuEvent) {}
+            public void menuCanceled(MenuEvent menuEvent) {}
         });
 
         /* <----- Add Menus to MenuBar -----> */
