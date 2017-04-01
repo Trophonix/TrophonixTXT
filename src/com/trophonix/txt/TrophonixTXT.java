@@ -1,15 +1,16 @@
-package com.trophonix.editor;
+package com.trophonix.txt;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.*;
 import java.nio.file.Files;
 
 /**
  * Created by Lucas on 3/31/17.
  */
-public class TEditor extends JFrame {
+public class TrophonixTXT extends JFrame {
 
     private File currentDirectory = new File(".");
     private File currentFile = null;
@@ -17,8 +18,10 @@ public class TEditor extends JFrame {
     private JTextArea textArea = new JTextArea();
     private JScrollPane textPane = new JScrollPane(textArea);
 
-    public TEditor() {
-        super("Trophonix Editor");
+    private String lastSaved;
+
+    public TrophonixTXT() {
+        super("Trophonix TXT (New File)");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
@@ -33,7 +36,12 @@ public class TEditor extends JFrame {
         menuBar.add(fileMenu);
 
         JMenuItem newItem = new JMenuItem("[N]ew", KeyEvent.VK_N);
-        newItem.addActionListener(event -> textArea.setText(""));
+        newItem.addActionListener(event -> {
+            if (confirmClose()) {
+                textArea.setText("");
+                setTitle("Trophonix TXT (New File)");
+            }
+        });
         fileMenu.add(newItem);
 
         JMenuItem openItem = new JMenuItem("[O]pen", KeyEvent.VK_O);
@@ -55,7 +63,9 @@ public class TEditor extends JFrame {
         fileMenu.add(saveAsItem);
 
         JMenuItem exitItem = new JMenuItem("E[x]it", KeyEvent.VK_X);
-        exitItem.addActionListener(event -> dispose());
+        exitItem.addActionListener(event -> {
+            if (confirmClose()) dispose();
+        });
         fileMenu.add(exitItem);
 
         setJMenuBar(menuBar);
@@ -69,6 +79,22 @@ public class TEditor extends JFrame {
 
         textArea.setWrapStyleWord(true);
         textArea.setLineWrap(true);
+        textArea.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent keyEvent) {
+                if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
+            }
+
+            @Override
+            public void keyPressed(KeyEvent keyEvent) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent keyEvent) {
+
+            }
+        });
     }
 
     private void openFileChooser() {
@@ -84,6 +110,7 @@ public class TEditor extends JFrame {
                     currentDirectory = file.getParentFile();
                     Files.readAllLines(file.toPath()).forEach(line -> textArea.append(line + "\n"));
                     currentFile = file;
+                    setTitle("Trophonix TXT (" + file.getName() + ")");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -130,13 +157,24 @@ public class TEditor extends JFrame {
             FileWriter fileWriter = new FileWriter(currentFile, true);
             textArea.write(fileWriter);
             fileWriter.close();
+            lastSaved = textArea.getText();
+            setTitle("Trophonix TXT (" + name + ")");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
 
+    private boolean confirmClose() {
+        if (!textArea.getText().isEmpty() && !textArea.getText().equals(lastSaved)) {
+            JFrame chooser = makeChooserFrame();
+            int input = JOptionPane.showOptionDialog(chooser, "Do you want to exit without saving?", "You Haven't Saved!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{"Yes, exit", "No, I want to save!"}, (Object)"Yes, exit");
+            return input == 0;
+        }
+        return true;
+    }
+
     public static void main(String[] args) {
-        new TEditor();
+        new TrophonixTXT();
     }
 
 }
