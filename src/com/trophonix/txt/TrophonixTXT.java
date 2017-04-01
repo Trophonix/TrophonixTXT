@@ -181,8 +181,11 @@ public class TrophonixTXT extends JFrame {
         textArea.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent keyEvent) {
-                if (textArea.getText().equals(lastSaved)) setTitle(getTitle().replace("*)", ")"));
-                else if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
+                EventQueue.invokeLater(() -> {
+                    if (textArea.getText().equals(lastSaved) || textArea.getText().isEmpty())
+                        setTitle(getTitle().replace("*)", ")"));
+                    else if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
+                });
             }
 
             public void keyPressed(KeyEvent keyEvent) {}
