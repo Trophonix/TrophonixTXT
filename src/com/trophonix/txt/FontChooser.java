@@ -36,9 +36,10 @@ public class FontChooser extends JPanel {
     private TrophonixTXT main;
     private JFrame frame;
 
-    public FontChooser(TrophonixTXT main, JFrame frame) {
+    public FontChooser(TrophonixTXT main, JFrame frame, Font font) {
         this.main = main;
         this.frame = frame;
+        this.font = font;
 
         GridBagLayout gbPanel = new GridBagLayout();
         GridBagConstraints gbcPanel = new GridBagConstraints();
@@ -94,6 +95,8 @@ public class FontChooser extends JPanel {
             makeFont();
             tfFontFamilyField.setText(lsFontFamilyList.getSelectedValue().toString());
         });
+        lsFontFamilyList.setSelectedValue(font.getFamily(), true);
+
 
         gbcPanel.gridx = 1;
         gbcPanel.gridy = 3;
@@ -109,6 +112,7 @@ public class FontChooser extends JPanel {
         String[] dataTypefaceList = {"Plain", "Bold", "Italic", "Bold Italic"};
         lsTypefaceList = new JList(dataTypefaceList);
         lsTypefaceList.addListSelectionListener(event -> makeFont());
+        lsTypefaceList.setSelectedValue(font.getStyle(), true);
 
         gbcPanel.gridx = 11;
         gbcPanel.gridy = 2;
@@ -138,6 +142,7 @@ public class FontChooser extends JPanel {
         for (int i = 6; i < 73; i += 2) dataList3.add(i);
         lsList3 = new JList(dataList3.toArray());
         lsList3.addListSelectionListener(event -> makeFont());
+        lsList3.setSelectedValue(font.getSize(), true);
 
         gbcPanel.gridx = 11;
         gbcPanel.gridy = 8;

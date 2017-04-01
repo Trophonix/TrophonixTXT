@@ -20,7 +20,7 @@ import java.nio.file.Files;
  */
 public class TrophonixTXT extends JFrame {
 
-    private static final String TITLE = "TrophonixTXT v1.1";
+    private static final String TITLE = "TrophonixTXT v1.2";
 
     private File currentDirectory = new File(".");
     private File currentFile = null;
@@ -247,7 +247,7 @@ public class TrophonixTXT extends JFrame {
 
     private void openFontChooser() {
         JFrame chooser = makeChooserFrame();
-        chooser.add(new FontChooser(this, chooser));
+        chooser.add(new FontChooser(this, chooser, textArea.getFont()));
         chooser.setSize(new Dimension(400, 300));
         chooser.setVisible(true);
     }
