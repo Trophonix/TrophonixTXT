@@ -46,7 +46,7 @@ public class TrophonixTXT extends JFrame {
         fileMenu.setMnemonic(KeyEvent.VK_F);
         menuBar.add(fileMenu);
 
-        JMenuItem newItem = new JMenuItem("[N]ew", KeyEvent.VK_N);
+        JMenuItem newItem = new JMenuItem("New", KeyEvent.VK_N);
         newItem.addActionListener(event -> {
             if (confirmClose()) {
                 textArea.setText("");
@@ -55,11 +55,11 @@ public class TrophonixTXT extends JFrame {
         });
         fileMenu.add(newItem);
 
-        JMenuItem openItem = new JMenuItem("[O]pen", KeyEvent.VK_O);
+        JMenuItem openItem = new JMenuItem("Open", KeyEvent.VK_O);
         openItem.addActionListener(event -> openFileChooser());
         fileMenu.add(openItem);
 
-        JMenuItem saveItem = new JMenuItem("[S]ave", KeyEvent.VK_A);
+        JMenuItem saveItem = new JMenuItem("Save", KeyEvent.VK_A);
         saveItem.addActionListener(event -> {
             if (currentFile == null || !currentFile.exists()) {
                 openFileSaver();
@@ -69,11 +69,11 @@ public class TrophonixTXT extends JFrame {
         });
         fileMenu.add(saveItem);
 
-        JMenuItem saveAsItem = new JMenuItem("Save [A]s", KeyEvent.VK_S);
+        JMenuItem saveAsItem = new JMenuItem("Save As", KeyEvent.VK_S);
         saveAsItem.addActionListener(event -> openFileSaver());
         fileMenu.add(saveAsItem);
 
-        JMenuItem exitItem = new JMenuItem("E[x]it", KeyEvent.VK_X);
+        JMenuItem exitItem = new JMenuItem("Exit", KeyEvent.VK_X);
         exitItem.addActionListener(event -> {
             if (confirmClose()) dispose();
         });
@@ -82,24 +82,25 @@ public class TrophonixTXT extends JFrame {
         JMenu editMenu = new JMenu("Edit");
         editMenu.setMnemonic(KeyEvent.VK_E);
 
-        JMenuItem fontItem = new JMenuItem("[F]ont", KeyEvent.VK_F);
+        JMenuItem fontItem = new JMenuItem("Font", KeyEvent.VK_F);
         fontItem.addActionListener(event -> openFontChooser());
         editMenu.add(fontItem);
 
         JCheckBoxMenuItem wordWrapItem = new JCheckBoxMenuItem( "Word Wrap", true);
+        wordWrapItem.setMnemonic(KeyEvent.VK_W);
         wordWrapItem.addActionListener(event -> textArea.setLineWrap(wordWrapItem.getState()));
         editMenu.add(wordWrapItem);
 
         editMenu.add(new JSeparator());
 
-        JMenuItem selectAllItem = new JMenuItem("Select All");
+        JMenuItem selectAllItem = new JMenuItem("Select All", KeyEvent.VK_A);
         selectAllItem.addActionListener(event -> {
             textArea.requestFocusInWindow();
             textArea.selectAll();
         });
         editMenu.add(selectAllItem);
 
-        JMenuItem copyItem = new JMenuItem("Copy");
+        JMenuItem copyItem = new JMenuItem("Copy", KeyEvent.VK_C);
         copyItem.addActionListener(event -> {
             StringSelection selection = new StringSelection(textArea.getSelectedText());
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
@@ -107,7 +108,7 @@ public class TrophonixTXT extends JFrame {
         copyItem.setEnabled(false);
         editMenu.add(copyItem);
 
-        JMenuItem pasteItem = new JMenuItem("Paste");
+        JMenuItem pasteItem = new JMenuItem("Paste", KeyEvent.VK_P);
         pasteItem.addActionListener(event -> {
             Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
             try {
@@ -168,15 +169,8 @@ public class TrophonixTXT extends JFrame {
                 if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
             }
 
-            @Override
-            public void keyPressed(KeyEvent keyEvent) {
-
-            }
-
-            @Override
-            public void keyReleased(KeyEvent keyEvent) {
-
-            }
+            public void keyPressed(KeyEvent keyEvent) {}
+            public void keyReleased(KeyEvent keyEvent) {}
         });
     }
 
