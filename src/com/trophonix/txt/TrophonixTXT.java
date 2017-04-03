@@ -1,7 +1,5 @@
 package com.trophonix.txt;
 
-import javafx.scene.text.*;
-
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
@@ -297,6 +295,7 @@ public class TrophonixTXT extends JFrame {
         JFrame chooser = makeChooserFrame();
         chooser.add(new FontChooser(this, chooser, textArea.getFont()));
         chooser.setSize(new Dimension(400, 300));
+        chooser.setLocationRelativeTo(null);
         chooser.setVisible(true);
     }
 

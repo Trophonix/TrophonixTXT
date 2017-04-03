@@ -195,7 +195,7 @@ public class FontChooser extends JPanel {
         add( btBut0);
         btBut0.addActionListener(event -> {
             makeFont();
-            if (font != null) main.font(font);
+            main.font(this.font);
             frame.setVisible(false);
             frame.dispose();
         });
@@ -219,8 +219,9 @@ public class FontChooser extends JPanel {
 
     private void makeFont() {
         try {
-            font = new Font(lsFontFamilyList.getSelectedValue().toString(), lsTypefaceList.getSelectedIndex(), Integer.parseInt(lsList3.getSelectedValue().toString()));
-            taPreviewArea.setFont(font);
+            this.font = new Font(lsFontFamilyList.getSelectedValue().toString(), lsTypefaceList.getSelectedIndex(), Integer.parseInt(lsList3.getSelectedValue().toString()));
+            System.out.println(font);
+            taPreviewArea.setFont(this.font);
         } catch (Exception ex) {
 
         }
