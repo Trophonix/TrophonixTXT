@@ -1,16 +1,19 @@
 package com.trophonix.txt;
 
+import javafx.scene.text.*;
+
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import java.awt.*;
+import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.*;
 import java.io.*;
-import java.nio.file.Files;
+import java.util.Properties;
 
 /**
  * Created by Lucas on 3/31/17.
@@ -27,6 +30,9 @@ public class TrophonixTXT extends JFrame {
 
     private String lastSaved;
 
+    private File configFile;
+    private Properties config;
+
     public TrophonixTXT() {
         super(TITLE + " (New File)");
         try {
@@ -40,7 +46,6 @@ public class TrophonixTXT extends JFrame {
         /* <----- File Menu -----> */
         JMenu fileMenu = new JMenu("File");
         fileMenu.setMnemonic(KeyEvent.VK_F);
-        menuBar.add(fileMenu);
 
         JMenuItem newItem = new JMenuItem("New", KeyEvent.VK_N);
         newItem.addActionListener(event -> {
@@ -163,6 +168,7 @@ public class TrophonixTXT extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (confirmClose()) {
+                    saveConfig();
                     dispose();
                 }
             }
@@ -191,6 +197,28 @@ public class TrophonixTXT extends JFrame {
             public void keyPressed(KeyEvent keyEvent) {}
             public void keyReleased(KeyEvent keyEvent) {}
         });
+
+        /* <----- Get Properties -----> */
+        configFile = new File(System.getProperty("user.home"), "trophonix" + File.separator + "txt" + File.separator + "config.properties");
+        if (!configFile.exists()) {
+            configFile.getParentFile().mkdirs();
+            try {
+                configFile.createNewFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        config = new Properties();
+        try {
+            config.load(new FileInputStream(configFile));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        if (config.contains("fontFamily")) {
+            Font font = new Font(config.getProperty("fontFamily"), Integer.parseInt(config.getProperty("fontStyle")), Integer.parseInt(config.getProperty("fontSize")));
+            textArea.setFont(font);
+        }
     }
 
     private void openFileChooser() {
@@ -279,8 +307,20 @@ public class TrophonixTXT extends JFrame {
         return chooserFrame;
     }
 
-    public void setFont(Font font) {
+    public void font(Font font) {
         textArea.setFont(font);
+        config.setProperty("fontFamily", font.getFamily());
+        config.setProperty("fontStyle", font.getStyle() + "");
+        config.setProperty("fontSize", font.getSize() + "");
+        saveConfig();
+    }
+
+    private void saveConfig() {
+        try {
+            config.store(new FileOutputStream(configFile), "saving");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

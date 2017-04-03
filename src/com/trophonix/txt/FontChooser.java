@@ -195,7 +195,7 @@ public class FontChooser extends JPanel {
         add( btBut0);
         btBut0.addActionListener(event -> {
             makeFont();
-            if (font != null) main.setFont(font);
+            if (font != null) main.font(font);
             frame.setVisible(false);
             frame.dispose();
         });
