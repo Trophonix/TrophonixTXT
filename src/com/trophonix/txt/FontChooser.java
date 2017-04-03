@@ -220,7 +220,6 @@ public class FontChooser extends JPanel {
     private void makeFont() {
         try {
             this.font = new Font(lsFontFamilyList.getSelectedValue().toString(), lsTypefaceList.getSelectedIndex(), Integer.parseInt(lsList3.getSelectedValue().toString()));
-            System.out.println(font);
             taPreviewArea.setFont(this.font);
         } catch (Exception ex) {
 

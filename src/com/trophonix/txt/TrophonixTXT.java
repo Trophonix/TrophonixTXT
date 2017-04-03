@@ -87,7 +87,12 @@ public class TrophonixTXT extends JFrame {
 
         JCheckBoxMenuItem wordWrapItem = new JCheckBoxMenuItem( "Word Wrap", true);
         wordWrapItem.setMnemonic(KeyEvent.VK_W);
-        wordWrapItem.addActionListener(event -> textArea.setLineWrap(wordWrapItem.getState()));
+        wordWrapItem.addActionListener(event -> {
+            boolean wordWrap = wordWrapItem.getState();
+            textArea.setLineWrap(wordWrap);
+            config.setProperty("wordWrap", Boolean.toString(wordWrap));
+            saveConfig();
+        });
         editMenu.add(wordWrapItem);
 
         editMenu.add(new JSeparator());
@@ -213,9 +218,15 @@ public class TrophonixTXT extends JFrame {
             ex.printStackTrace();
         }
 
-        if (config.contains("fontFamily")) {
+        if (config.getProperty("fontFamily") != null) {
             Font font = new Font(config.getProperty("fontFamily"), Integer.parseInt(config.getProperty("fontStyle")), Integer.parseInt(config.getProperty("fontSize")));
             textArea.setFont(font);
+        }
+
+        if (config.getProperty("wordWrap") != null) {
+            boolean wordWrap = Boolean.parseBoolean(config.getProperty("wordWrap"));
+            textArea.setLineWrap(wordWrap);
+            wordWrapItem.setState(wordWrap);
         }
     }
 
