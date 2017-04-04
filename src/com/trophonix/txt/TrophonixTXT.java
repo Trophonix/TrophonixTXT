@@ -24,7 +24,6 @@ public class TrophonixTXT extends JFrame {
     private File currentFile = null;
 
     private JTextArea textArea = new JTextArea();
-    private JScrollPane textPane = new JScrollPane(textArea);
 
     private String lastSaved;
 
@@ -144,7 +143,7 @@ public class TrophonixTXT extends JFrame {
         /* <----- Set MenuBar -----> */
         setJMenuBar(menuBar);
 
-        add(textPane);
+        add(new JScrollPane(textArea));
         pack();
         Dimension size = new Dimension(640, 480);
         setSize(size);
