@@ -75,6 +75,7 @@ public class TrophonixTXT extends JFrame {
         exitItem.addActionListener(event -> {
             if (confirmClose()) dispose();
         });
+        fileMenu.add(exitItem);
 
         /* <----- Edit Menu -----> */
         JMenu editMenu = new JMenu("Edit");
