@@ -49,12 +49,17 @@ public class TrophonixTXT extends JFrame {
             if (confirmClose()) {
                 textArea.setText("");
                 setTitle(TITLE + " (New File)");
+                currentDirectory = null;
+                currentFile = null;
+                lastSaved = null;
             }
         });
+        newItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         fileMenu.add(newItem);
 
         JMenuItem openItem = new JMenuItem("Open", KeyEvent.VK_O);
         openItem.addActionListener(event -> openFileChooser());
+        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         fileMenu.add(openItem);
 
         JMenuItem saveItem = new JMenuItem("Save", KeyEvent.VK_A);
@@ -65,6 +70,7 @@ public class TrophonixTXT extends JFrame {
                 saveCurrentFile();
             }
         });
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         fileMenu.add(saveItem);
 
         JMenuItem saveAsItem = new JMenuItem("Save As", KeyEvent.VK_S);
@@ -102,6 +108,7 @@ public class TrophonixTXT extends JFrame {
             textArea.requestFocusInWindow();
             textArea.selectAll();
         });
+        selectAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         editMenu.add(selectAllItem);
 
         JMenuItem copyItem = new JMenuItem("Copy", KeyEvent.VK_C);
@@ -109,6 +116,7 @@ public class TrophonixTXT extends JFrame {
             StringSelection selection = new StringSelection(textArea.getSelectedText());
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
         });
+        copyItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         copyItem.setEnabled(false);
         editMenu.add(copyItem);
 
@@ -121,6 +129,7 @@ public class TrophonixTXT extends JFrame {
                 ex.printStackTrace();
             }
         });
+        pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         pasteItem.setEnabled(false);
         editMenu.add(pasteItem);
 
@@ -150,22 +159,13 @@ public class TrophonixTXT extends JFrame {
         setSize(size);
 
         InputMap map = textArea.getInputMap(JComponent.WHEN_FOCUSED);
-        map.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                if (currentFile == null || !currentFile.exists()) {
-                    openFileSaver();
-                } else {
-                    saveCurrentFile();
-                }
-            }
-        });
         map.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 if (confirmClose()) dispose();
             }
         });
+
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowListener() {
             @Override
@@ -191,7 +191,7 @@ public class TrophonixTXT extends JFrame {
             @Override
             public void keyTyped(KeyEvent keyEvent) {
                 EventQueue.invokeLater(() -> {
-                    if (textArea.getText().equals(lastSaved) || textArea.getText().isEmpty())
+                    if ((lastSaved == null && textArea.getText().isEmpty()) || textArea.getText().equals(lastSaved))
                         setTitle(getTitle().replace("*)", ")"));
                     else if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
                 });
@@ -242,6 +242,7 @@ public class TrophonixTXT extends JFrame {
                     textArea.setText("");
                     currentDirectory = file.getParentFile();
                     textArea.read(new FileReader(file), "Opening File for TrophonixTXT");
+                    lastSaved = textArea.getText();
                     currentFile = file;
                     setTitle(TITLE + " (" + file.getName() + ")");
                 } catch (IOException ex) {
@@ -263,7 +264,9 @@ public class TrophonixTXT extends JFrame {
             File file = chooser.getSelectedFile();
             if (file != null) {
                 currentFile = file;
-                saveCurrentFile();
+                if (!currentFile.exists() || confirmOverwrite(currentFile)) {
+                    saveCurrentFile();
+                }
             }
         }
         fileFrame.setVisible(false);
@@ -280,7 +283,7 @@ public class TrophonixTXT extends JFrame {
                 currentFile.getParentFile().mkdirs();
                 currentFile.createNewFile();
             }
-            FileWriter fileWriter = new FileWriter(currentFile, true);
+            FileWriter fileWriter = new FileWriter(currentFile);
             textArea.write(fileWriter);
             fileWriter.close();
             lastSaved = textArea.getText();
@@ -291,15 +294,25 @@ public class TrophonixTXT extends JFrame {
     }
 
     private boolean confirmClose() {
-        if (!textArea.getText().isEmpty() && !textArea.getText().equals(lastSaved)) {
+        if (lastSaved == null && textArea.getText().isEmpty()) return true;
+        if (!textArea.getText().equals(lastSaved)) {
             JFrame chooser = makeChooserFrame();
             chooser.setVisible(true);
-            int input = JOptionPane.showOptionDialog(chooser, "Do you want to exit without saving?", "You Haven't Saved!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{"Yes, exit", "No, I want to save!"}, (Object)"Yes, exit");
+            int input = JOptionPane.showOptionDialog(chooser, "Do you want to exit without saving?", "You Haven't Saved!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{"Yes, exit", "No, I want to save!"}, "Yes, exit");
             chooser.setVisible(false);
             chooser.dispose();
             return input == 0;
         }
         return true;
+    }
+
+    private boolean confirmOverwrite(File file) {
+        JFrame chooser = makeChooserFrame();
+        chooser.setVisible(true);
+        int input = JOptionPane.showOptionDialog(chooser, "Do you want to overwrite " + file.getName() + "?", "Overwrite existing file?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{"Yes", "No"}, "Yes");
+        chooser.setVisible(false);
+        chooser.dispose();
+        return input == 0;
     }
 
     private void openFontChooser() {

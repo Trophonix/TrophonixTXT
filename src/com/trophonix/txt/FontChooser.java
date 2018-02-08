@@ -85,18 +85,13 @@ public class FontChooser extends JPanel {
         gbPanel.setConstraints(tfFontFamilyField, gbcPanel);
         add(tfFontFamilyField);
 
-        Font[] systemFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-        String[] dataFontFamilyList = new String[systemFonts.length];
-        for (int i = 0; i < systemFonts.length; i++) {
-            dataFontFamilyList[i] = systemFonts[i].getFamily();
-        }
-        lsFontFamilyList = new JList(dataFontFamilyList);
+        String[] dataFontFamilyList = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        lsFontFamilyList = new JList<>(dataFontFamilyList);
         lsFontFamilyList.addListSelectionListener(event -> {
             makeFont();
             tfFontFamilyField.setText(lsFontFamilyList.getSelectedValue().toString());
         });
         lsFontFamilyList.setSelectedValue(font.getFamily(), true);
-
 
         gbcPanel.gridx = 1;
         gbcPanel.gridy = 3;
@@ -110,9 +105,13 @@ public class FontChooser extends JPanel {
         add(new JScrollPane(lsFontFamilyList), gbcPanel);
 
         String[] dataTypefaceList = {"Plain", "Bold", "Italic", "Bold Italic"};
-        lsTypefaceList = new JList(dataTypefaceList);
+        lsTypefaceList = new JList<>(dataTypefaceList);
         lsTypefaceList.addListSelectionListener(event -> makeFont());
-        lsTypefaceList.setSelectedValue(font.getStyle(), true);
+        String currentTypeface = dataTypefaceList[font.getStyle()].toLowerCase();
+        char[] currentTypefaceChars = currentTypeface.toCharArray();
+        currentTypefaceChars[0] = Character.toUpperCase(currentTypefaceChars[0]);
+        currentTypeface = new String(currentTypefaceChars);
+        lsTypefaceList.setSelectedValue(currentTypeface, true);
 
         gbcPanel.gridx = 11;
         gbcPanel.gridy = 2;
@@ -139,10 +138,15 @@ public class FontChooser extends JPanel {
         add(lbFontSizeLabel);
 
         List<Integer> dataList3 = new ArrayList<>();
-        for (int i = 6; i < 73; i += 2) dataList3.add(i);
-        lsList3 = new JList(dataList3.toArray());
+        for (int i = 4; i <= 20; i++) dataList3.add(i);
+        for (int i = 22; i <= 32; i += 2) dataList3.add(i);
+        for (int i = 34; i <= 72; i += 4) dataList3.add(i);
+        Integer[] dataArray3 = new Integer[dataList3.size()];
+        for (int i = 0; i < dataList3.size(); i++) dataArray3[i] = dataList3.get(i);
+        lsList3 = new JList<>(dataArray3);
         lsList3.addListSelectionListener(event -> makeFont());
-        lsList3.setSelectedValue(font.getSize(), true);
+        int selection = dataList3.contains(font.getSize()) ? font.getSize() : 16;
+        lsList3.setSelectedValue(selection, true);
 
         gbcPanel.gridx = 11;
         gbcPanel.gridy = 8;
