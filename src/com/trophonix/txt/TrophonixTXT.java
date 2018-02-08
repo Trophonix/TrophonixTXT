@@ -18,7 +18,7 @@ import java.util.Properties;
  */
 public class TrophonixTXT extends JFrame {
 
-    private static final String TITLE = "TrophonixTXT v1.3 BETA";
+    private static final String TITLE = "TrophonixTXT v1.4 BETA";
 
     private File currentDirectory = new File(".");
     private File currentFile = null;
