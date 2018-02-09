@@ -127,12 +127,12 @@ public class TrophonixTXT extends JFrame {
         JMenu editMenu = new JMenu("Edit");
         editMenu.setMnemonic(KeyEvent.VK_E);
 
-        JMenuItem undoItem = new JMenuItem("Undo");
+        JMenuItem undoItem = new FocusedOnlyJMenuItem("Undo", textArea);
         undoItem.addActionListener(event -> undo());
         undoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         editMenu.add(undoItem);
 
-        JMenuItem redoItem = new JMenuItem("Redo");
+        JMenuItem redoItem = new FocusedOnlyJMenuItem("Redo", textArea);
         redoItem.addActionListener(action -> redo());
         redoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK));
         editMenu.add(redoItem);
@@ -167,13 +167,15 @@ public class TrophonixTXT extends JFrame {
             StringSelection selection = new StringSelection(textArea.getSelectedText());
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
         });
-        copyItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        KeyStroke copyKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+        copyItem.setAccelerator(copyKeyStroke);
         copyItem.setEnabled(false);
         editMenu.add(copyItem);
 
         JMenuItem pasteItem = new JMenuItem("Paste", KeyEvent.VK_P);
         pasteItem.addActionListener(event -> textArea.paste());
-        pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        KeyStroke pasteKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+        pasteItem.setAccelerator(pasteKeyStroke);
         pasteItem.setEnabled(false);
         editMenu.add(pasteItem);
 
@@ -185,6 +187,30 @@ public class TrophonixTXT extends JFrame {
         findTextField.addActionListener((event) -> find(findTextField.getText()));
         findPanel.add(findTextField, BorderLayout.CENTER);
 
+        UndoManager findUndoManager = new UndoManager();
+
+        findTextField.getDocument().addUndoableEditListener(event -> findUndoManager.addEdit(event.getEdit()));
+
+        findTextField.getActionMap().put("undo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (findUndoManager.canUndo()) {
+                    findUndoManager.undo();
+                }
+            }
+        });
+        findTextField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), "undo");
+
+        findTextField.getActionMap().put("redo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (findUndoManager.canRedo()) {
+                    findUndoManager.redo();
+                }
+            }
+        });
+        findTextField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK), "redo");
+
         JPanel findButtonsPanel = new JPanel(new BorderLayout());
 
         JCheckBox findCaseSensitive = new JCheckBox("Ignore Case");
@@ -192,6 +218,8 @@ public class TrophonixTXT extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 findIgnoreCase = !findIgnoreCase;
+                findTextField.requestFocusInWindow();
+                find(findTextField.getText());
             }
         });
         findButtonsPanel.add(findCaseSensitive, BorderLayout.WEST);
