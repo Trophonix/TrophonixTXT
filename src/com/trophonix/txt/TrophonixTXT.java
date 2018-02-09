@@ -8,7 +8,9 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
@@ -47,6 +49,8 @@ public class TrophonixTXT extends JFrame {
 
     private JTextPane textArea = new JTextPane();
     private JScrollPane scrollPane = new JScrollPane(textArea);
+    private Document textDocument = textArea.getDocument();
+    private UndoManager undoManager = new UndoManager();
 
     private String lastSaved;
 
@@ -85,6 +89,7 @@ public class TrophonixTXT extends JFrame {
                 currentDirectory = null;
                 currentFile = null;
                 lastSaved = null;
+                undoManager.discardAllEdits();
             }
         });
         newItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
@@ -119,6 +124,18 @@ public class TrophonixTXT extends JFrame {
         /* <----- Edit Menu -----> */
         JMenu editMenu = new JMenu("Edit");
         editMenu.setMnemonic(KeyEvent.VK_E);
+
+        JMenuItem undoItem = new JMenuItem("Undo");
+        undoItem.addActionListener(event -> undo());
+        undoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        editMenu.add(undoItem);
+
+        JMenuItem redoItem = new JMenuItem("Redo");
+        redoItem.addActionListener(action -> redo());
+        redoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK));
+        editMenu.add(redoItem);
+
+        editMenu.add(new JSeparator());
 
         JMenuItem fontItem = new JMenuItem("Font", KeyEvent.VK_F);
         fontItem.addActionListener(event -> openFontChooser());
@@ -283,11 +300,7 @@ public class TrophonixTXT extends JFrame {
         textArea.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent keyEvent) {
-                EventQueue.invokeLater(() -> {
-                    if ((lastSaved == null && textArea.getText().isEmpty()) || textArea.getText().equals(lastSaved))
-                        setTitle(getTitle().replace("*)", ")"));
-                    else if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
-                });
+                checkForChanges();
             }
 
             public void keyPressed(KeyEvent keyEvent) {}
@@ -299,6 +312,11 @@ public class TrophonixTXT extends JFrame {
         setPreferredSize(SIZE);
         pack();
         setLocationRelativeTo(null);
+
+        /* <----- Setup Undo/Redo -----> */
+        textDocument.addUndoableEditListener(event -> {
+            undoManager.addEdit(event.getEdit());
+        });
 
         /* <----- Get Properties -----> */
         configFile = new File(System.getProperty("user.home"), "trophonix" + File.separator + "txt" + File.separator + "config.properties");
@@ -329,14 +347,12 @@ public class TrophonixTXT extends JFrame {
         }
     }
 
-    private void wrap(boolean wordWrap) {
-        if (wordWrap) {
-            scrollPane.setViewportView(textArea);
-        } else {
-            JPanel panel = new JPanel(new BorderLayout());
-            scrollPane.setViewportView(panel);
-            panel.add(textArea);
-        }
+    private void checkForChanges() {
+        EventQueue.invokeLater(() -> {
+            if ((lastSaved == null && textArea.getText().trim().isEmpty()) || textArea.getText().equals(lastSaved))
+                setTitle(getTitle().replace("*)", ")"));
+            else if (!getTitle().endsWith("*)")) setTitle(getTitle().replace(")", "*)"));
+        });
     }
 
     private void openFileChooser() {
@@ -422,6 +438,28 @@ public class TrophonixTXT extends JFrame {
         chooser.setVisible(false);
         chooser.dispose();
         return input == 0;
+    }
+
+    private void undo() {
+        if (undoManager.canUndo()) {
+            undoManager.undo();
+        }
+    }
+
+    private void redo() {
+        if (undoManager.canRedo()) {
+            undoManager.redo();
+        }
+    }
+
+    private void wrap(boolean wordWrap) {
+        if (wordWrap) {
+            scrollPane.setViewportView(textArea);
+        } else {
+            JPanel panel = new JPanel(new BorderLayout());
+            scrollPane.setViewportView(panel);
+            panel.add(textArea);
+        }
     }
 
     private void openFontChooser() {
