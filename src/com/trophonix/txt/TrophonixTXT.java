@@ -53,8 +53,8 @@ public class TrophonixTXT extends JFrame {
 
     private String lastSaved;
 
-    private Highlighter.HighlightPainter defaultHighlighter = DefaultHighlighter.DefaultPainter;
-    private Highlighter.HighlightPainter selectedHighlighter = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
+    private static Highlighter.HighlightPainter defaultHighlighter = DefaultHighlighter.DefaultPainter;
+    private static Highlighter.HighlightPainter selectedHighlighter = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 
     private boolean finding;
     private String lastFind;
@@ -317,6 +317,8 @@ public class TrophonixTXT extends JFrame {
                 menuBar.setBackground(new Color(224, 224, 224));
                 menuBar.setForeground(Color.BLACK);
                 textArea.setBackground(Color.WHITE);
+                defaultHighlighter = new DefaultHighlighter.DefaultHighlightPainter(new Color(0, 153, 255));
+                selectedHighlighter = new DefaultHighlighter.DefaultHighlightPainter(new Color(51, 204, 255));
                 MutableAttributeSet attrs = textArea.getInputAttributes();
                 StyleConstants.setForeground(attrs, Color.BLACK);
                 StyledDocument doc = textArea.getStyledDocument();
@@ -335,6 +337,8 @@ public class TrophonixTXT extends JFrame {
                 menuBar.setBackground(Color.BLACK);
                 menuBar.setForeground(Color.WHITE);
                 textArea.setBackground(new Color(66, 66, 66));
+                defaultHighlighter = new DefaultHighlighter.DefaultHighlightPainter(new Color(180, 180, 180));
+                selectedHighlighter = new DefaultHighlighter.DefaultHighlightPainter(new Color(140, 140, 140));
                 MutableAttributeSet attrs = textArea.getInputAttributes();
                 StyleConstants.setForeground(attrs, Color.WHITE);
                 StyledDocument doc = textArea.getStyledDocument();
@@ -353,6 +357,8 @@ public class TrophonixTXT extends JFrame {
                 menuBar.setBackground(new Color(48, 63, 159));
                 menuBar.setForeground(Color.WHITE);
                 textArea.setBackground(new Color(63, 81, 181));
+                defaultHighlighter = new DefaultHighlighter.DefaultHighlightPainter(new Color(200, 200, 200));
+                selectedHighlighter = new DefaultHighlighter.DefaultHighlightPainter(new Color(160, 160, 160));
                 MutableAttributeSet attrs = textArea.getInputAttributes();
                 StyleConstants.setForeground(attrs, Color.WHITE);
                 StyledDocument doc = textArea.getStyledDocument();
