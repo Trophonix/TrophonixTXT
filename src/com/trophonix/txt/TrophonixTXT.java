@@ -275,6 +275,9 @@ public class TrophonixTXT extends JFrame {
                 copyItem.setEnabled(selection != null && !selection.isEmpty());
                 Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
                 pasteItem.setEnabled(clipboard != null && clipboard.isDataFlavorSupported(DataFlavor.stringFlavor));
+
+                undoItem.setEnabled(undoManager.canUndo());
+                redoItem.setEnabled(undoManager.canRedo());
             }
 
             public void menuDeselected(MenuEvent menuEvent) {}
@@ -299,7 +302,10 @@ public class TrophonixTXT extends JFrame {
         map.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                if (confirmClose()) dispose();
+                if (confirmClose()) {
+                    setVisible(false);
+                    dispose();
+                }
             }
         });
 
@@ -309,6 +315,7 @@ public class TrophonixTXT extends JFrame {
             public void windowClosing(WindowEvent e) {
                 if (confirmClose()) {
                     saveConfig();
+                    setVisible(false);
                     dispose();
                 }
             }
