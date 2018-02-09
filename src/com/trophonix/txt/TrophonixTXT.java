@@ -1,31 +1,62 @@
 package com.trophonix.txt;
 
+import java.util.*;
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import java.awt.*;
 import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.*;
 import java.io.*;
-import java.util.Properties;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Lucas on 3/31/17.
  */
 public class TrophonixTXT extends JFrame {
 
-    private static final String TITLE = "TrophonixTXT v1.4 BETA";
+    private class FindEntry {
+
+        final int start;
+        final int end;
+
+        public FindEntry(int start, int end) {
+            this.start = start;
+            this.end = end;
+        }
+
+    }
+
+    private static final String TITLE = "TrophonixTXT v1.5 BETA";
+    private static final Dimension SIZE = new Dimension(640, 480);
+
+    private JPanel mainPanel = new JPanel(new BorderLayout());
 
     private File currentDirectory = new File(".");
     private File currentFile = null;
 
-    private JTextArea textArea = new JTextArea();
+    private JTextPane textArea = new JTextPane();
+    private JScrollPane scrollPane = new JScrollPane(textArea);
 
     private String lastSaved;
+
+    private Highlighter.HighlightPainter defaultHighlighter = DefaultHighlighter.DefaultPainter;
+    private Highlighter.HighlightPainter selectedHighlighter = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
+
+    private boolean finding;
+    private String lastFind;
+    private int findScrollIndex;
+    private List<FindEntry> findIndexes = new ArrayList<>();
 
     private File configFile;
     private Properties config;
@@ -37,6 +68,8 @@ public class TrophonixTXT extends JFrame {
         } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
             ex.printStackTrace();
         }
+
+        setLayout(new BorderLayout());
 
         JMenuBar menuBar = new JMenuBar();
 
@@ -94,9 +127,8 @@ public class TrophonixTXT extends JFrame {
         JCheckBoxMenuItem wordWrapItem = new JCheckBoxMenuItem( "Word Wrap", true);
         wordWrapItem.setMnemonic(KeyEvent.VK_W);
         wordWrapItem.addActionListener(event -> {
-            boolean wordWrap = wordWrapItem.getState();
-            textArea.setLineWrap(wordWrap);
-            config.setProperty("wordWrap", Boolean.toString(wordWrap));
+            wrap(wordWrapItem.getState());
+            config.setProperty("wordWrap", Boolean.toString(wordWrapItem.getState()));
             saveConfig();
         });
         editMenu.add(wordWrapItem);
@@ -123,15 +155,65 @@ public class TrophonixTXT extends JFrame {
         JMenuItem pasteItem = new JMenuItem("Paste", KeyEvent.VK_P);
         pasteItem.addActionListener(event -> {
             Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
-            try {
-                textArea.insert((String)clipboard.getTransferData(DataFlavor.stringFlavor), textArea.getCaretPosition());
-            } catch (UnsupportedFlavorException | IOException ex) {
-                ex.printStackTrace();
-            }
+            textArea.paste();
         });
         pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         pasteItem.setEnabled(false);
         editMenu.add(pasteItem);
+
+        editMenu.add(new JSeparator());
+
+        JPanel findPanel = new JPanel(new BorderLayout());
+
+        JTextField findTextField = new JTextField();
+        findTextField.addActionListener((event) -> find(findTextField.getText()));
+        findPanel.add(findTextField, BorderLayout.CENTER);
+
+        JPanel findButtonsPanel = new JPanel(new BorderLayout());
+
+        JButton findButton = new JButton("Find");
+        findButton.addActionListener((event) -> find(findTextField.getText()));
+        findButtonsPanel.add(findButton, BorderLayout.CENTER);
+
+        ImageIcon xIcon = null, xHoverIcon = null;
+        try {
+            xIcon = new ImageIcon(ImageIO.read(getClass().getResource("resources/x.png")));
+            xHoverIcon = new ImageIcon(ImageIO.read(getClass().getResource("resources/x_hover.png")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        JButton closeFindButton = new JButton();
+        try {
+            closeFindButton.setIcon(xIcon);
+            closeFindButton.setBorder(new EmptyBorder(3, 3, 3, 7));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        ImageIcon finalXHoverIcon = xHoverIcon;
+        ImageIcon finalXIcon = xIcon;
+        closeFindButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                closeFindButton.setIcon(finalXHoverIcon);
+                closeFindButton.setBorder(new EmptyBorder(3, 3, 3, 7));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                closeFindButton.setIcon(finalXIcon);
+                closeFindButton.setBorder(new EmptyBorder(3, 3, 3, 7));
+            }
+        });
+        closeFindButton.addActionListener((event) -> toggleFind(findPanel, findTextField));
+        findButtonsPanel.add(closeFindButton, BorderLayout.EAST);
+
+        findPanel.add(findButtonsPanel, BorderLayout.EAST);
+
+        JMenuItem findItem = new JMenuItem("Find", KeyEvent.VK_F);
+        findItem.addActionListener(event -> toggleFind(findPanel, findTextField));
+        findItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        editMenu.add(findItem);
 
         editMenu.addMenuListener(new MenuListener() {
             @Override
@@ -146,17 +228,19 @@ public class TrophonixTXT extends JFrame {
             public void menuCanceled(MenuEvent menuEvent) {}
         });
 
+        /* <----- View Menu -----> */
+        JMenu viewMenu = new JMenu("View");
+        viewMenu.setMnemonic(KeyEvent.VK_V);
+
         /* <----- Add Menus to MenuBar -----> */
         menuBar.add(fileMenu);
         menuBar.add(editMenu);
+//        menuBar.add(viewMenu);
 
         /* <----- Set MenuBar -----> */
         setJMenuBar(menuBar);
 
-        add(new JScrollPane(textArea));
-        pack();
-        Dimension size = new Dimension(640, 480);
-        setSize(size);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         InputMap map = textArea.getInputMap(JComponent.WHEN_FOCUSED);
         map.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), new AbstractAction() {
@@ -184,9 +268,18 @@ public class TrophonixTXT extends JFrame {
         });
         setLocationRelativeTo(null);
         setVisible(true);
+        if (System.getProperty("os.name").startsWith("Mac OS X")) {
+            MacUtil.enableOSXFullscreen(this);
+            MacUtil.enableOSXQuitStrategy();
+        }
+        addWindowStateListener(event -> {
+            boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
+            boolean isMaximized = (event.getNewState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
+            if (wasMaximized != isMaximized) {
+                MacUtil.toggleOSXFullscreen(this);
+            }
+        });
 
-        textArea.setWrapStyleWord(true);
-        textArea.setLineWrap(true);
         textArea.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent keyEvent) {
@@ -200,6 +293,12 @@ public class TrophonixTXT extends JFrame {
             public void keyPressed(KeyEvent keyEvent) {}
             public void keyReleased(KeyEvent keyEvent) {}
         });
+
+        add(mainPanel);
+        setSize(SIZE);
+        setPreferredSize(SIZE);
+        pack();
+        setLocationRelativeTo(null);
 
         /* <----- Get Properties -----> */
         configFile = new File(System.getProperty("user.home"), "trophonix" + File.separator + "txt" + File.separator + "config.properties");
@@ -225,8 +324,18 @@ public class TrophonixTXT extends JFrame {
 
         if (config.getProperty("wordWrap") != null) {
             boolean wordWrap = Boolean.parseBoolean(config.getProperty("wordWrap"));
-            textArea.setLineWrap(wordWrap);
+            wrap(wordWrap);
             wordWrapItem.setState(wordWrap);
+        }
+    }
+
+    private void wrap(boolean wordWrap) {
+        if (wordWrap) {
+            scrollPane.setViewportView(textArea);
+        } else {
+            JPanel panel = new JPanel(new BorderLayout());
+            scrollPane.setViewportView(panel);
+            panel.add(textArea);
         }
     }
 
@@ -330,6 +439,56 @@ public class TrophonixTXT extends JFrame {
         return chooserFrame;
     }
 
+    private void toggleFind(JPanel findPanel, JTextField findTextField) {
+        finding = !finding;
+        if (finding) {
+            mainPanel.add(findPanel, BorderLayout.NORTH);
+            findTextField.requestFocusInWindow();
+        } else {
+            textArea.getHighlighter().removeAllHighlights();
+            mainPanel.remove(findPanel);
+        }
+        revalidate();
+    }
+
+    private void find(String search) {
+        if (!search.isEmpty()) {
+            if (lastFind != null && !lastFind.isEmpty() && search.equals(lastFind)) {
+                if (findIndexes.isEmpty()) return;
+                findScrollIndex ++;
+                if (findScrollIndex >= findIndexes.size()) findScrollIndex = 0;
+                Highlighter highlighter = textArea.getHighlighter();
+                highlighter.removeAllHighlights();
+                for (int i = 0; i < findIndexes.size(); i++) {
+                    FindEntry entry = findIndexes.get(i);
+                    try {
+                        highlighter.addHighlight(entry.start, entry.end,
+                                i == findScrollIndex ? selectedHighlighter : defaultHighlighter);
+                        if (i == findScrollIndex) {
+                            textArea.scrollRectToVisible(textArea.modelToView(entry.end));
+                        }
+                    } catch (BadLocationException ignored) {}
+                }
+            } else {
+                lastFind = search;
+                findIndexes.clear();
+                findScrollIndex = -1;
+                Highlighter highlighter = textArea.getHighlighter();
+                highlighter.removeAllHighlights();
+                Pattern pattern = Pattern.compile(search, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(textArea.getText());
+                boolean first = true;
+                while (matcher.find()) {
+                    int start = matcher.start();
+                    int end = matcher.end();
+
+                    findIndexes.add(new FindEntry(start, end));
+                }
+                find(search);
+            }
+        }
+    }
+
     public void font(Font font) {
         textArea.setFont(font);
         config.setProperty("fontFamily", font.getFamily());
@@ -347,6 +506,7 @@ public class TrophonixTXT extends JFrame {
     }
 
     public static void main(String[] args) {
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
         new TrophonixTXT();
     }
 
