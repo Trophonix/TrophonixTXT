@@ -69,6 +69,23 @@ public class TrophonixTXT extends JFrame {
     public TrophonixTXT() {
         super(TITLE + " (New File)");
 
+        configFile = new File(System.getProperty("user.home"), "trophonix" + File.separator + "txt" + File.separator + "config.properties");
+        if (!configFile.exists()) {
+            configFile.getParentFile().mkdirs();
+            try {
+                configFile.createNewFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        config = new Properties();
+        try {
+            config.load(new FileInputStream(configFile));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         mainPanel.setBorder(null);
         scrollPane.setBorder(null);
         textArea.setBorder(new EmptyBorder(5, 10, 5, 10));
@@ -294,8 +311,8 @@ public class TrophonixTXT extends JFrame {
 
         ButtonGroup themeGroup = new ButtonGroup();
 
-        JRadioButtonMenuItem lightCheckBoxItem = new JRadioButtonMenuItem("Light", true);
-        ActionListener listener = (event) -> {
+        JRadioButtonMenuItem lightCheckBoxItem = new JRadioButtonMenuItem("Light");
+        lightCheckBoxItem.addItemListener((event) -> {
             if (lightCheckBoxItem.isSelected()) {
                 menuBar.setBackground(new Color(224, 224, 224));
                 menuBar.setForeground(Color.BLACK);
@@ -307,15 +324,15 @@ public class TrophonixTXT extends JFrame {
                 StyledDocument doc = textArea.getStyledDocument();
                 doc.setCharacterAttributes(0, doc.getLength() + 1, attrs, false);
                 repaint();
+                config.setProperty("theme", "light");
+                saveConfig();
             }
-        };
-        lightCheckBoxItem.addActionListener(listener);
-        listener.actionPerformed(null);
+        });
         themeItem.add(lightCheckBoxItem);
         themeGroup.add(lightCheckBoxItem);
 
         JRadioButtonMenuItem darkCheckBoxItem = new JRadioButtonMenuItem("Dark");
-        darkCheckBoxItem.addActionListener(event -> {
+        darkCheckBoxItem.addItemListener(event -> {
             if (darkCheckBoxItem.isSelected()) {
                 menuBar.setBackground(Color.BLACK);
                 menuBar.setForeground(Color.WHITE);
@@ -327,13 +344,15 @@ public class TrophonixTXT extends JFrame {
                 StyledDocument doc = textArea.getStyledDocument();
                 doc.setCharacterAttributes(0, doc.getLength() + 1, attrs, false);
                 repaint();
+                config.setProperty("theme", "dark");
+                saveConfig();
             }
         });
         themeItem.add(darkCheckBoxItem);
         themeGroup.add(darkCheckBoxItem);
 
         JRadioButtonMenuItem indigoCheckBoxItem = new JRadioButtonMenuItem("Indigo");
-        indigoCheckBoxItem.addActionListener(event -> {
+        indigoCheckBoxItem.addItemListener(event -> {
             if (indigoCheckBoxItem.isSelected()) {
                 menuBar.setBackground(new Color(48, 63, 159));
                 menuBar.setForeground(Color.WHITE);
@@ -345,6 +364,8 @@ public class TrophonixTXT extends JFrame {
                 StyledDocument doc = textArea.getStyledDocument();
                 doc.setCharacterAttributes(0, doc.getLength() + 1, attrs, false);
                 repaint();
+                config.setProperty("theme", "indigo");
+                saveConfig();
             }
         });
         themeItem.add(indigoCheckBoxItem);
@@ -429,34 +450,32 @@ public class TrophonixTXT extends JFrame {
         });
 
         /* <----- Get Properties -----> */
-        configFile = new File(System.getProperty("user.home"), "trophonix" + File.separator + "txt" + File.separator + "config.properties");
-        if (!configFile.exists()) {
-            configFile.getParentFile().mkdirs();
-            try {
-                configFile.createNewFile();
-            } catch (IOException ex) {
-                ex.printStackTrace();
+        EventQueue.invokeLater(() -> {
+            if (config.getProperty("fontFamily") != null) {
+                Font font = new Font(config.getProperty("fontFamily"), Integer.parseInt(config.getProperty("fontStyle")), Integer.parseInt(config.getProperty("fontSize")));
+                textArea.setFont(font);
             }
-        }
-        config = new Properties();
-        try {
-            config.load(new FileInputStream(configFile));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
 
-        if (config.getProperty("fontFamily") != null) {
-            Font font = new Font(config.getProperty("fontFamily"), Integer.parseInt(config.getProperty("fontStyle")), Integer.parseInt(config.getProperty("fontSize")));
-            textArea.setFont(font);
-        }
+            if (config.getProperty("wordWrap") != null) {
+                boolean wordWrap = Boolean.parseBoolean(config.getProperty("wordWrap"));
+                wrap(wordWrap);
+                wordWrapItem.setState(wordWrap);
+            } else {
+                wrap(false);
+            }
 
-        if (config.getProperty("wordWrap") != null) {
-            boolean wordWrap = Boolean.parseBoolean(config.getProperty("wordWrap"));
-            wrap(wordWrap);
-            wordWrapItem.setState(wordWrap);
-        } else {
-            wrap(false);
-        }
+            if (config.getProperty("theme") != null) {
+                String theme = config.getProperty("theme");
+                for (int i = 0; i < themeItem.getItemCount(); i++) {
+                    JRadioButtonMenuItem item = (JRadioButtonMenuItem) themeItem.getItem(i);
+                    if (item.getText().equalsIgnoreCase(theme)) {
+                        item.setSelected(true);
+                    }
+                }
+            } else {
+                lightCheckBoxItem.setSelected(true);
+            }
+        });
 
     }
 
