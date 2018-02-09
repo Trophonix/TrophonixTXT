@@ -294,12 +294,23 @@ public class TrophonixTXT extends JFrame {
 
         ButtonGroup themeGroup = new ButtonGroup();
 
-        JRadioButtonMenuItem lightCheckBoxItem = new JRadioButtonMenuItem("Light");
-        lightCheckBoxItem.addActionListener(event -> {
+        JRadioButtonMenuItem lightCheckBoxItem = new JRadioButtonMenuItem("Light", true);
+        ActionListener listener = (event) -> {
             if (lightCheckBoxItem.isSelected()) {
-
+                menuBar.setBackground(new Color(224, 224, 224));
+                menuBar.setForeground(Color.BLACK);
+                findPanel.setBackground(new Color(245, 245, 245));
+                findPanel.setForeground(Color.BLACK);
+                textArea.setBackground(Color.WHITE);
+                MutableAttributeSet attrs = textArea.getInputAttributes();
+                StyleConstants.setForeground(attrs, Color.BLACK);
+                StyledDocument doc = textArea.getStyledDocument();
+                doc.setCharacterAttributes(0, doc.getLength() + 1, attrs, false);
+                repaint();
             }
-        });
+        };
+        lightCheckBoxItem.addActionListener(listener);
+        listener.actionPerformed(null);
         themeItem.add(lightCheckBoxItem);
         themeGroup.add(lightCheckBoxItem);
 
