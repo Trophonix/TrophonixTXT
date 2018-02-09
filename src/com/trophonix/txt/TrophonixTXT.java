@@ -61,6 +61,8 @@ public class TrophonixTXT extends JFrame {
     private String lastFind;
     private int findScrollIndex;
     private List<FindEntry> findIndexes = new ArrayList<>();
+    static boolean findIgnoreCase = false;
+    private boolean lastFindIgnoreCase = findIgnoreCase;
 
     private File configFile;
     private Properties config;
@@ -170,10 +172,7 @@ public class TrophonixTXT extends JFrame {
         editMenu.add(copyItem);
 
         JMenuItem pasteItem = new JMenuItem("Paste", KeyEvent.VK_P);
-        pasteItem.addActionListener(event -> {
-            Transferable clipboard = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
-            textArea.paste();
-        });
+        pasteItem.addActionListener(event -> textArea.paste());
         pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         pasteItem.setEnabled(false);
         editMenu.add(pasteItem);
@@ -187,6 +186,15 @@ public class TrophonixTXT extends JFrame {
         findPanel.add(findTextField, BorderLayout.CENTER);
 
         JPanel findButtonsPanel = new JPanel(new BorderLayout());
+
+        JCheckBox findCaseSensitive = new JCheckBox("Ignore Case");
+        findCaseSensitive.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                findIgnoreCase = !findIgnoreCase;
+            }
+        });
+        findButtonsPanel.add(findCaseSensitive, BorderLayout.WEST);
 
         JButton findButton = new JButton("Find");
         findButton.addActionListener((event) -> find(findTextField.getText()));
@@ -316,6 +324,7 @@ public class TrophonixTXT extends JFrame {
         /* <----- Setup Undo/Redo -----> */
         textDocument.addUndoableEditListener(event -> {
             undoManager.addEdit(event.getEdit());
+            checkForChanges();
         });
 
         /* <----- Get Properties -----> */
@@ -443,12 +452,14 @@ public class TrophonixTXT extends JFrame {
     private void undo() {
         if (undoManager.canUndo()) {
             undoManager.undo();
+            checkForChanges();
         }
     }
 
     private void redo() {
         if (undoManager.canRedo()) {
             undoManager.redo();
+            checkForChanges();
         }
     }
 
@@ -491,7 +502,7 @@ public class TrophonixTXT extends JFrame {
 
     private void find(String search) {
         if (!search.isEmpty()) {
-            if (lastFind != null && !lastFind.isEmpty() && search.equals(lastFind)) {
+            if (lastFind != null && !lastFind.isEmpty() && search.equals(lastFind) && lastFindIgnoreCase == findIgnoreCase) {
                 if (findIndexes.isEmpty()) return;
                 findScrollIndex ++;
                 if (findScrollIndex >= findIndexes.size()) findScrollIndex = 0;
@@ -509,13 +520,13 @@ public class TrophonixTXT extends JFrame {
                 }
             } else {
                 lastFind = search;
+                lastFindIgnoreCase = findIgnoreCase;
                 findIndexes.clear();
                 findScrollIndex = -1;
                 Highlighter highlighter = textArea.getHighlighter();
                 highlighter.removeAllHighlights();
-                Pattern pattern = Pattern.compile(search, Pattern.CASE_INSENSITIVE);
+                Pattern pattern = findIgnoreCase ? Pattern.compile(search, Pattern.CASE_INSENSITIVE) : Pattern.compile(search);
                 Matcher matcher = pattern.matcher(textArea.getText());
-                boolean first = true;
                 while (matcher.find()) {
                     int start = matcher.start();
                     int end = matcher.end();
