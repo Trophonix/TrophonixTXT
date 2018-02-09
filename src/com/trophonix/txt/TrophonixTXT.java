@@ -3,13 +3,12 @@ package com.trophonix.txt;
 import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+import javax.swing.event.UndoableEditEvent;
 import javax.swing.text.*;
-import javax.swing.undo.UndoManager;
+import javax.swing.undo.*;
 import java.awt.*;
 import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
@@ -62,6 +61,16 @@ public class TrophonixTXT extends JFrame {
     private List<FindEntry> findIndexes = new ArrayList<>();
     private static boolean findIgnoreCase = false;
     private boolean lastFindIgnoreCase = findIgnoreCase;
+
+    private boolean replacing;
+
+    private JPanel findContainer;
+
+    private JPanel findPanel;
+    private JTextField findTextField;
+
+    private JPanel replacePanel;
+    private JTextField replaceTextField;
 
     private File configFile;
     private Properties config;
@@ -193,11 +202,13 @@ public class TrophonixTXT extends JFrame {
 
         editMenu.add(new JSeparator());
 
-        JPanel findPanel = new JPanel(new BorderLayout());
+        findContainer = new JPanel(new BorderLayout());
+
+        findPanel = new JPanel(new BorderLayout());
         findPanel.setBorder(null);
 
-        JTextField findTextField = new JTextField();
-        findTextField.addActionListener((event) -> find(findTextField.getText()));
+        findTextField = new JTextField();
+        findTextField.addActionListener((event) -> find(false));
         findPanel.add(findTextField, BorderLayout.CENTER);
 
         UndoManager findUndoManager = new UndoManager();
@@ -227,18 +238,15 @@ public class TrophonixTXT extends JFrame {
         JPanel findButtonsPanel = new JPanel(new BorderLayout());
 
         JCheckBox findCaseSensitive = new JCheckBox("Ignore Case");
-        findCaseSensitive.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                findIgnoreCase = !findIgnoreCase;
-                findTextField.requestFocusInWindow();
-                find(findTextField.getText());
-            }
+        findCaseSensitive.addActionListener(e -> {
+            findIgnoreCase = !findIgnoreCase;
+            findTextField.requestFocusInWindow();
+            find(false);
         });
         findButtonsPanel.add(findCaseSensitive, BorderLayout.WEST);
 
         JButton findButton = new JButton("Find");
-        findButton.addActionListener((event) -> find(findTextField.getText()));
+        findButton.addActionListener((event) -> find(false));
         findButtonsPanel.add(findButton, BorderLayout.CENTER);
 
         ImageIcon xIcon = null, xHoverIcon = null;
@@ -271,15 +279,63 @@ public class TrophonixTXT extends JFrame {
                 closeFindButton.setBorder(new EmptyBorder(3, 3, 3, 7));
             }
         });
-        closeFindButton.addActionListener((event) -> toggleFind(findPanel, findTextField));
+        closeFindButton.addActionListener((event) -> toggleFind());
         findButtonsPanel.add(closeFindButton, BorderLayout.EAST);
 
         findPanel.add(findButtonsPanel, BorderLayout.EAST);
 
         JMenuItem findItem = new JMenuItem("Find", KeyEvent.VK_F);
-        findItem.addActionListener(event -> toggleFind(findPanel, findTextField));
+        findItem.addActionListener(event -> toggleFind());
         findItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         editMenu.add(findItem);
+
+        replacePanel = new JPanel(new BorderLayout());
+        replacePanel.setBorder(null);
+
+        replaceTextField = new JTextField();
+        replaceTextField.addActionListener(event -> replace());
+        replacePanel.add(replaceTextField, BorderLayout.CENTER);
+
+        UndoManager replaceUndoManager = new UndoManager();
+
+        replaceTextField.getDocument().addUndoableEditListener(event -> replaceUndoManager.addEdit(event.getEdit()));
+
+        replaceTextField.getActionMap().put("undo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (replaceUndoManager.canUndo()) {
+                    replaceUndoManager.undo();
+                }
+            }
+        });
+        replaceTextField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), "undo");
+
+        replaceTextField.getActionMap().put("redo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (replaceUndoManager.canRedo()) {
+                    replaceUndoManager.redo();
+                }
+            }
+        });
+        replaceTextField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK), "redo");
+
+        JPanel replaceButtonPanel = new JPanel(new BorderLayout());
+
+        JButton replaceButton = new JButton("Replace");
+        replaceButton.addActionListener(event -> replace());
+        replaceButtonPanel.add(replaceButton, BorderLayout.WEST);
+
+        JButton replaceAllButton = new JButton("Replace All");
+        replaceAllButton.addActionListener(event -> replaceAll());
+        replaceButtonPanel.add(replaceAllButton, BorderLayout.EAST);
+
+        replacePanel.add(replaceButtonPanel, BorderLayout.EAST);
+
+        JMenuItem replaceItem = new JMenuItem("Replace");
+        replaceItem.addActionListener(event -> toggleReplace());
+        replaceItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        editMenu.add(replaceItem);
 
         editMenu.addMenuListener(new MenuListener() {
             @Override
@@ -611,21 +667,39 @@ public class TrophonixTXT extends JFrame {
         return chooserFrame;
     }
 
-    private void toggleFind(JPanel findPanel, JTextField findTextField) {
+    private void toggleFind() {
         finding = !finding;
         if (finding) {
-            mainPanel.add(findPanel, BorderLayout.NORTH);
+            findContainer.add(findPanel, BorderLayout.CENTER);
+            mainPanel.add(findContainer, BorderLayout.NORTH);
             findTextField.requestFocusInWindow();
         } else {
+            if (replacing) toggleReplace();
             textArea.getHighlighter().removeAllHighlights();
-            mainPanel.remove(findPanel);
+            mainPanel.remove(findContainer);
+            findScrollIndex = -1;
         }
         revalidate();
     }
 
-    private void find(String search) {
+    private void toggleReplace() {
+        replacing = !replacing;
+        if (replacing) {
+            if (!finding) toggleFind();
+            findContainer.remove(findContainer);
+            findContainer.add(findPanel, BorderLayout.NORTH);
+            findContainer.add(replacePanel, BorderLayout.SOUTH);
+        } else {
+            findContainer.remove(replacePanel);
+            toggleFind();
+        }
+        revalidate();
+    }
+
+    private void find(boolean force) {
+        String search = findTextField.getText();
         if (!search.isEmpty()) {
-            if (lastFind != null && !lastFind.isEmpty() && search.equals(lastFind) && lastFindIgnoreCase == findIgnoreCase) {
+            if (!force && lastFind != null && !lastFind.isEmpty() && search.equals(lastFind) && lastFindIgnoreCase == findIgnoreCase) {
                 if (findIndexes.isEmpty()) return;
                 findScrollIndex ++;
                 if (findScrollIndex >= findIndexes.size()) findScrollIndex = 0;
@@ -656,9 +730,57 @@ public class TrophonixTXT extends JFrame {
 
                     findIndexes.add(new FindEntry(start, end));
                 }
-                find(search);
+                find(false);
             }
         }
+    }
+
+    private void replace() {
+        String search = findTextField.getText();
+        String replace = replaceTextField.getText();
+        if (replace == null) return;
+        if (lastFind != null && !lastFind.isEmpty() && search.equals(lastFind) && lastFindIgnoreCase == findIgnoreCase) {
+            if (findScrollIndex >= findIndexes.size()) return;
+            FindEntry entry = findIndexes.get(findScrollIndex);
+            String text = textArea.getText();
+            String before = text.substring(0, entry.start);
+            String after = text.substring(entry.end, text.length());
+            String newText = before + replace + after;
+            textArea.setText(newText);
+            triggerChange(text, newText);
+            find(true);
+            findScrollIndex ++;
+            find(false);
+        }
+    }
+
+    private void replaceAll() {
+        String search = findTextField.getText();
+        String replace = replaceTextField.getText();
+        if (replace == null) return;
+        if (lastFind != null && !lastFind.isEmpty() && search.equals(lastFind) && lastFindIgnoreCase == findIgnoreCase) {
+            String text = textArea.getText();
+            String newText = text.replace(search, replace);
+            textArea.setText(newText);
+            triggerChange(text, newText);
+            find(true);
+        }
+    }
+
+    private void triggerChange(String text, String newText) {
+        undoManager.undoableEditHappened(new UndoableEditEvent(textArea, new AbstractUndoableEdit() {
+            @Override
+            public void undo() throws CannotUndoException {
+                super.undo();
+                textArea.setText(text);
+            }
+
+            @Override
+            public void redo() throws CannotRedoException {
+                super.redo();
+                textArea.setText(newText);
+            }
+        }));
     }
 
     public void font(Font font) {
