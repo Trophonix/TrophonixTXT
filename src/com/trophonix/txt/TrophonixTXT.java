@@ -38,7 +38,7 @@ public class TrophonixTXT extends JFrame {
 
     }
 
-    private static final String TITLE = "TrophonixTXT v1.5 BETA";
+    private static final String TITLE = "TrophonixTXT v1.6 BETA";
     private static final Dimension SIZE = new Dimension(640, 480);
 
     private JPanel mainPanel = new JPanel(new BorderLayout());
