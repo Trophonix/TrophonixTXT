@@ -3,13 +3,12 @@ package com.trophonix.txt;
 import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Document;
-import javax.swing.text.Highlighter;
+import javax.swing.text.*;
 import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.awt.Font;
@@ -61,7 +60,7 @@ public class TrophonixTXT extends JFrame {
     private String lastFind;
     private int findScrollIndex;
     private List<FindEntry> findIndexes = new ArrayList<>();
-    static boolean findIgnoreCase = false;
+    private static boolean findIgnoreCase = false;
     private boolean lastFindIgnoreCase = findIgnoreCase;
 
     private File configFile;
@@ -69,15 +68,15 @@ public class TrophonixTXT extends JFrame {
 
     public TrophonixTXT() {
         super(TITLE + " (New File)");
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
-            ex.printStackTrace();
-        }
+
+        mainPanel.setBorder(null);
+        scrollPane.setBorder(null);
+        textArea.setBorder(new EmptyBorder(5, 10, 5, 10));
 
         setLayout(new BorderLayout());
 
-        JMenuBar menuBar = new JMenuBar();
+        JMenuBar menuBar = new CustomMenuBar();
+        menuBar.setBorder(null);
 
         /* <----- File Menu -----> */
         JMenu fileMenu = new JMenu("File");
@@ -139,10 +138,6 @@ public class TrophonixTXT extends JFrame {
 
         editMenu.add(new JSeparator());
 
-        JMenuItem fontItem = new JMenuItem("Font", KeyEvent.VK_F);
-        fontItem.addActionListener(event -> openFontChooser());
-        editMenu.add(fontItem);
-
         JCheckBoxMenuItem wordWrapItem = new JCheckBoxMenuItem( "Word Wrap", true);
         wordWrapItem.setMnemonic(KeyEvent.VK_W);
         wordWrapItem.addActionListener(event -> {
@@ -182,6 +177,7 @@ public class TrophonixTXT extends JFrame {
         editMenu.add(new JSeparator());
 
         JPanel findPanel = new JPanel(new BorderLayout());
+        findPanel.setBorder(null);
 
         JTextField findTextField = new JTextField();
         findTextField.addActionListener((event) -> find(findTextField.getText()));
@@ -288,10 +284,67 @@ public class TrophonixTXT extends JFrame {
         JMenu viewMenu = new JMenu("View");
         viewMenu.setMnemonic(KeyEvent.VK_V);
 
+        JMenuItem fontItem = new JMenuItem("Font", KeyEvent.VK_F);
+        fontItem.addActionListener(event -> openFontChooser());
+        viewMenu.add(fontItem);
+
+        JMenu themeItem = new JMenu("Theme");
+        themeItem.setOpaque(true);
+        themeItem.setMnemonic(KeyEvent.VK_T);
+
+        ButtonGroup themeGroup = new ButtonGroup();
+
+        JRadioButtonMenuItem lightCheckBoxItem = new JRadioButtonMenuItem("Light");
+        lightCheckBoxItem.addActionListener(event -> {
+            if (lightCheckBoxItem.isSelected()) {
+
+            }
+        });
+        themeItem.add(lightCheckBoxItem);
+        themeGroup.add(lightCheckBoxItem);
+
+        JRadioButtonMenuItem darkCheckBoxItem = new JRadioButtonMenuItem("Dark");
+        darkCheckBoxItem.addActionListener(event -> {
+            if (darkCheckBoxItem.isSelected()) {
+                menuBar.setBackground(Color.BLACK);
+                menuBar.setForeground(Color.WHITE);
+                findPanel.setBackground(new Color(33, 33, 33));
+                findPanel.setForeground(Color.WHITE);
+                textArea.setBackground(new Color(66, 66, 66));
+                MutableAttributeSet attrs = textArea.getInputAttributes();
+                StyleConstants.setForeground(attrs, Color.WHITE);
+                StyledDocument doc = textArea.getStyledDocument();
+                doc.setCharacterAttributes(0, doc.getLength() + 1, attrs, false);
+                repaint();
+            }
+        });
+        themeItem.add(darkCheckBoxItem);
+        themeGroup.add(darkCheckBoxItem);
+
+        JRadioButtonMenuItem indigoCheckBoxItem = new JRadioButtonMenuItem("Indigo");
+        indigoCheckBoxItem.addActionListener(event -> {
+            if (indigoCheckBoxItem.isSelected()) {
+                menuBar.setBackground(new Color(48, 63, 159));
+                menuBar.setForeground(Color.WHITE);
+                findPanel.setBackground(new Color(68, 138, 255));
+                findPanel.setForeground(Color.WHITE);
+                textArea.setBackground(new Color(63, 81, 181));
+                MutableAttributeSet attrs = textArea.getInputAttributes();
+                StyleConstants.setForeground(attrs, Color.WHITE);
+                StyledDocument doc = textArea.getStyledDocument();
+                doc.setCharacterAttributes(0, doc.getLength() + 1, attrs, false);
+                repaint();
+            }
+        });
+        themeItem.add(indigoCheckBoxItem);
+        themeGroup.add(indigoCheckBoxItem);
+
+        viewMenu.add(themeItem);
+
         /* <----- Add Menus to MenuBar -----> */
         menuBar.add(fileMenu);
         menuBar.add(editMenu);
-//        menuBar.add(viewMenu);
+        menuBar.add(viewMenu);
 
         /* <----- Set MenuBar -----> */
         setJMenuBar(menuBar);
@@ -333,10 +386,12 @@ public class TrophonixTXT extends JFrame {
             MacUtil.enableOSXQuitStrategy();
         }
         addWindowStateListener(event -> {
-            boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
-            boolean isMaximized = (event.getNewState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
-            if (wasMaximized != isMaximized) {
-                MacUtil.toggleOSXFullscreen(this);
+            if (System.getProperty("os.name").startsWith("Mac OS X")) {
+                boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
+                boolean isMaximized = (event.getNewState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH;
+                if (wasMaximized != isMaximized) {
+                    MacUtil.toggleOSXFullscreen(this);
+                }
             }
         });
 
@@ -388,7 +443,10 @@ public class TrophonixTXT extends JFrame {
             boolean wordWrap = Boolean.parseBoolean(config.getProperty("wordWrap"));
             wrap(wordWrap);
             wordWrapItem.setState(wordWrap);
+        } else {
+            wrap(false);
         }
+
     }
 
     private void checkForChanges() {
@@ -590,7 +648,12 @@ public class TrophonixTXT extends JFrame {
     }
 
     public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
+        }
         System.setProperty("apple.laf.useScreenMenuBar", "true");
+        UIManager.put("PopupMenu.border", BorderFactory.createEmptyBorder());
         new TrophonixTXT();
     }
 
