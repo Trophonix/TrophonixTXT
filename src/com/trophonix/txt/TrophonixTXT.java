@@ -316,8 +316,6 @@ public class TrophonixTXT extends JFrame {
             if (lightCheckBoxItem.isSelected()) {
                 menuBar.setBackground(new Color(224, 224, 224));
                 menuBar.setForeground(Color.BLACK);
-                findPanel.setBackground(new Color(245, 245, 245));
-                findPanel.setForeground(Color.BLACK);
                 textArea.setBackground(Color.WHITE);
                 MutableAttributeSet attrs = textArea.getInputAttributes();
                 StyleConstants.setForeground(attrs, Color.BLACK);
@@ -336,8 +334,6 @@ public class TrophonixTXT extends JFrame {
             if (darkCheckBoxItem.isSelected()) {
                 menuBar.setBackground(Color.BLACK);
                 menuBar.setForeground(Color.WHITE);
-                findPanel.setBackground(new Color(33, 33, 33));
-                findPanel.setForeground(Color.WHITE);
                 textArea.setBackground(new Color(66, 66, 66));
                 MutableAttributeSet attrs = textArea.getInputAttributes();
                 StyleConstants.setForeground(attrs, Color.WHITE);
@@ -356,8 +352,6 @@ public class TrophonixTXT extends JFrame {
             if (indigoCheckBoxItem.isSelected()) {
                 menuBar.setBackground(new Color(48, 63, 159));
                 menuBar.setForeground(Color.WHITE);
-                findPanel.setBackground(new Color(68, 138, 255));
-                findPanel.setForeground(Color.WHITE);
                 textArea.setBackground(new Color(63, 81, 181));
                 MutableAttributeSet attrs = textArea.getInputAttributes();
                 StyleConstants.setForeground(attrs, Color.WHITE);
